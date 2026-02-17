@@ -91,20 +91,6 @@ namespace vidzhet {
         }
 
     public:
-        template<typename T>
-        T read_static(const std::string& name) {
-            static_assert(std::is_trivially_copyable_v<T>, "Only trivially copyable types supported");
-
-            auto* h = find_header(name);
-            if (!h) throw std::runtime_error("Header not found");
-            if (h->data_size != sizeof(T)) throw std::runtime_error("Size mismatch");
-
-            file_.seekg(h->data_offset);
-            T value;
-            file_.read(reinterpret_cast<char*>(&value), sizeof(T));
-            if (!file_) throw std::runtime_error("Failed to read value");
-            return value;
-        }
 
         // ---------------- Header Iterator ----------------
         template<typename T>
@@ -210,6 +196,14 @@ namespace vidzhet {
             }
         };
 
+        template<typename T>
+        T read_static(const std::string& name) {
+            //static_assert(std::is_trivially_copyable_v<T>, "Only trivially copyable types supported");
+
+            auto h = header<T>(name);
+            return h.read();
+        }
+
         // ---------------- Add Header ----------------
         template<typename T>
         HeaderIterator<T> addheader(const std::string& name) {
@@ -252,11 +246,6 @@ namespace vidzhet {
         }
         void additem(const std::string& name, std::string& value) {
             additem<std::string>(name, value);
-        }
-
-        std::string read_string(const std::string& name) {
-            auto h = header<std::string>(name);
-            return h.read();
         }
     };
 }

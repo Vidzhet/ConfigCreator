@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 	file.close();
 
 	vidzhet::ConfigCreator outfile("config", Read);
-	std::cout << outfile.read_static<double>("item1") << std::endl << outfile.read_string("item str") << std::endl;
+	std::cout << outfile.read_static<double>("item1") << std::endl << outfile.read_static<std::string>("item str") << std::endl;
 
 
 	auto outheader = outfile.header<std::string>("list");
