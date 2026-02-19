@@ -22,20 +22,23 @@ namespace vidzhet {
         Mode mode_;
         std::vector<HeaderInfo> headers_;
         static constexpr char MAGIC[3] = { 'M', 'G', 'E' };
-        static constexpr char tf_fmt[] = { 0x2e, 0x6d, 0x67, 0x65, 0x0 };
 
     public:
-        ConfigCreator(const std::string& filename, Mode mode)
+        ConfigCreator(std::string filename, Mode mode)
             : mode_(mode)
         {
+            if (filename.size() < 4 || filename.compare(filename.size() - 4, 4, ".mge") != 0)
+            {
+                filename += ".mge";
+            }
             if (mode == Mode::Write) {
-                file_.open(filename + tf_fmt, std::ios::binary | std::ios::out | std::ios::trunc);
+                file_.open(filename, std::ios::binary | std::ios::out | std::ios::trunc);
                 if (!file_) { throw std::runtime_error("Failed to open file"); }
 
                 file_.write(MAGIC, sizeof(MAGIC));
             }
             else {
-                file_.open(filename + tf_fmt, std::ios::binary | std::ios::in);
+                file_.open(filename, std::ios::binary | std::ios::in);
                 if (!file_) { throw std::runtime_error("Failed to open file"); }
 
                 char magic_check[sizeof(MAGIC)];
@@ -174,11 +177,13 @@ namespace vidzhet {
                     throw std::runtime_error("Out of bounds");
                 }
 
+                std::streampos old_pos = file_->tellg();
                 if constexpr (std::is_trivially_copyable_v<T>) {
                     T value;
                     file_->seekg(data_start_ + offset_);
                     file_->read(reinterpret_cast<char*>(&value), sizeof(T));
                     offset_ += sizeof(T);
+                    file_->seekg(old_pos);
                     return value;
                 }
                 else if constexpr (std::is_same_v<T, std::string>) {
@@ -188,6 +193,7 @@ namespace vidzhet {
                     std::string s(len, '\0');
                     file_->read(&s[0], len);
                     offset_ += sizeof(len) + len;
+                    file_->seekg(old_pos);
                     return s;
                 }
                 else {
